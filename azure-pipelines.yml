@@ -1,0 +1,64 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- none
+
+variables:
+  IISWebSiteName : 'WebAPIDevopeIIS'
+
+
+resources:
+ pipelines:
+   -  pipeline: 'buildPipeline'
+      project: 'WebAPIDevopeIIS'
+      source: 'Build Pipeline'
+      branch: 'main'
+      
+
+stages:   
+ - stage: DeployWebSite
+   displayName: 'Deploy Stage'  
+   pool:
+      vmImage: windows-latest
+
+   jobs:
+     - deployment: DeployWebSite
+       displayName: 'Deploy WebSite'       
+       environment: 'Windows 11 server.DAVE'      
+       strategy:
+        runOnce:
+           deploy:
+             steps:
+               - checkout: none
+
+               - download: 'buildPipeline'
+                 name: 'DownloadBuildArtifacts'
+                 displayName: 'Download Build Artifacts'
+                 artifact: 'WebAPIDevopeIIS'
+
+               - task: IISWebAppManagementOnMachineGroup@0
+                 name: 'StopeIIS'
+                 displayName: 'Stop IIS WebSite'
+                 inputs:
+                   IISDeploymentType: 'IISWebsite'
+                   ActionIISWebsite: 'StopWebsite'
+                   StartStopWebsiteName: '${{ variables.IISWebSiteName}}'
+              
+               - task: IISWebAppDeploymentOnMachineGroup@0
+                 name: 'DeployIIS'
+                 displayName: 'Deploy IIS WebSite'
+                 inputs:
+                   WebSiteName: '${{ variables.IISWebSiteName}}'
+                   Package: '$(System.DefaultWorkingDirectory)\**\*.zip'
+                   TakeAppOfflineFlag: true
+                 
+               - task: IISWebAppManagementOnMachineGroup@0
+                 name: 'StartIIS'
+                 displayName: 'Start IIS WebSite'
+                 inputs:
+                   IISDeploymentType: 'IISWebsite'
+                   ActionIISWebsite: 'StartWebsite'
+                   StartStopWebsiteName: '${{ variables.IISWebSiteName}}'
