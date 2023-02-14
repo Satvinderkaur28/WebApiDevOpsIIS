@@ -15,7 +15,7 @@ resources:
    -  pipeline: 'buildPipeline'
       project: 'WebAPIDevopeIIS'
       source: 'Build Pipeline'
-      branch: 'main'
+      branch: 'master'
       
 
 stages:   
